@@ -1,0 +1,406 @@
+.\" SPDX-FileCopyrightText: 2025 Yuval Adar <adary@adary.org>
+.\" SPDX-License-Identifier: MIT
+.TH NDMGR 1 "August 2025" "NDMGR" "User Commands"
+.SH NAME
+ndmgr \- Nocturne Dotfile Manager
+.SH SYNOPSIS
+.B ndmgr
+[\fIOPTIONS\fR] [\fIMODULE\fR...]
+.SH DESCRIPTION
+NDMGR is a symlink farm manager that helps organize and deploy dotfiles through symbolic links. It combines the simplicity of traditional stow-like tools with advanced features including git integration, intelligent conflict resolution, and automated module discovery.
+
+Key principles:
+.IP \(bu 4
+\fBNon-destructive\fR: Always preserves existing files through backups
+.IP \(bu 4
+\fBPredictable\fR: Same operation produces same results
+.IP \(bu 4
+\fBTransparent\fR: Clear feedback about what actions are taken
+
+.SH OPTIONS
+.SS "Basic Options"
+.TP
+.BR \-d ", " \-\-dir " " \fIDIR\fR
+Source directory (default: current)
+.TP
+.BR \-t ", " \-\-target " " \fIDIR\fR  
+Target directory (default: $HOME)
+.TP
+.BR \-f ", " \-\-force " " [\fIMODE\fR]
+Force operation mode. \fIMODE\fR can be \fByes\fR, \fBno\fR, or omitted for default
+.TP
+.BR \-v ", " \-\-verbose
+Verbose output
+.TP
+.BR \-n ", " \-\-simulate
+Dry run mode (show what would be done)
+.TP
+.BR \-h ", " \-\-help
+Show help message
+.TP
+.BR \-\-version
+Show version information
+
+.SS "Link Operations"
+.TP
+.BR \-\-link
+Link specified modules (default action)
+.TP
+.BR \-D ", " \-\-unlink
+Remove links for specified modules
+.TP
+.BR \-\-relink
+Unlink then relink specified modules
+.TP
+.BR \-i ", " \-\-ignore " " \fIPATTERN\fR
+Ignore files matching pattern (can be used multiple times)
+
+.SS "Deployment"
+.TP
+.BR \-\-deploy
+Deploy all discovered modules
+
+.SS "Git Operations"
+.TP
+.BR \-\-pull " " [\fB\-\-repository\fR " " \fINAME\fR]
+Pull repository changes
+.TP
+.BR \-\-push " " [\fB\-\-repository\fR " " \fINAME\fR]
+Push repository changes  
+.TP
+.BR \-\-pull\-all
+Pull all configured repositories
+.TP
+.BR \-\-push\-all
+Push all configured repositories
+.TP
+.BR \-\-sync
+Pull all repositories then deploy
+.TP
+.BR \-\-init\-repo
+Initialize git repository
+
+.SS "Configuration"
+.TP
+.BR \-\-config " " [\fIKEY\fR]
+Show configuration (optionally specific key)
+.TP
+.BR \-\-init\-config
+Initialize configuration file
+.TP
+.BR \-\-add\-repo
+Add repository (requires \fB\-\-name\fR, \fB\-\-path\fR, \fB\-\-remote\fR)
+.TP
+.BR \-\-name " " \fINAME\fR
+Repository name (for \fB\-\-add\-repo\fR)
+.TP
+.BR \-\-path " " \fIPATH\fR
+Repository path (for \fB\-\-add\-repo\fR)
+.TP
+.BR \-\-remote " " \fIURL\fR
+Repository remote URL (for \fB\-\-add\-repo\fR)
+.TP
+.BR \-\-branch " " \fIBRANCH\fR
+Repository branch (for \fB\-\-add\-repo\fR)
+
+.SS "Information"
+.TP
+.BR \-\-status
+Show system and repository status
+.TP
+.BR \-\-repos
+List configured repositories
+.TP
+.BR \-\-info " " [\fB\-\-module\fR " " \fIMODULE\fR]
+Show module information
+
+.SH MODULE SYSTEM
+.SS "Module Discovery"
+NDMGR scans directories to find modules using these rules:
+.IP 1. 4
+\fBScan depth\fR: Configurable depth limit (default: 3 levels)
+.IP 2. 4  
+\fBModule detection\fR: Directories containing files or \fB.ndmgr\fR configuration
+.IP 3. 4
+\fBIgnore patterns\fR: Skip directories matching configured patterns
+
+.SS "Module Configuration"
+Create a \fB.ndmgr\fR file in your module to control its behavior:
+.PP
+.RS 4
+.EX
+# dotfiles/nvim/.ndmgr
+description = "Neovim configuration"
+target_dir = "$HOME/.config"
+.EE
+.RE
+
+\fBConfiguration Options:\fR
+.IP \(bu 4
+\fBdescription\fR: Human-readable module description  
+.IP \(bu 4
+\fBtarget_dir\fR: Custom target directory (supports ~, ~/path, $HOME, $HOME/path)
+
+.SH CONFLICT RESOLUTION
+NDMGR provides four strategies for handling conflicts when target files already exist:
+
+.IP 1. 4
+\fBfail\fR (default): Stop operation and show error when conflicts are detected
+.IP 2. 4
+\fBskip\fR: Skip conflicting files and continue with non-conflicting files (useful in --deploy mode with multiple modules)
+.IP 3. 4  
+\fBadopt\fR: Move existing files into the source module, then create symlinks
+.IP 4. 4
+\fBreplace\fR: Delete existing files in target and create symlinks (respects backup settings)
+
+.SS "Strategy Details"
+.TP
+.B fail
+Immediately stops when any conflict is detected. Shows clear error message.
+.TP
+.B skip  
+Continues processing other files when conflicts are found. Useful for batch operations.
+.TP
+.B adopt
+Integrates existing files into your dotfiles repository.
+Before: ~/.vimrc exists in target
+After: dotfiles/vim/.vimrc (moved from target), ~/.vimrc -> dotfiles/vim/.vimrc (symlink)
+.TP
+.B replace
+Removes existing files and creates symlinks.
+Before: ~/.vimrc exists in target
+After: ~/.vimrc -> dotfiles/vim/.vimgrc (symlink), ~/.vimrc.bkp (backup if enabled)
+
+.SH CONFIGURATION
+The configuration file is located at \fB~/.config/ndmgr/config.toml\fR and supports:
+
+.SS "Configuration File Structure"
+.PP
+.RS 4
+.EX
+[settings]
+default_target = "$HOME"
+verbose = false
+
+[linking] 
+conflict_resolution = "fail"    # fail, skip, adopt, replace
+tree_folding = "directory"      # directory, aggressive
+backup_conflicts = true
+backup_suffix = "bkp"
+scan_depth = 3
+ignore_patterns = ["*.git", "node_modules"]
+
+[git]
+conflict_resolution = "ask"     # local, remote, ask  
+commit_message_template = "ndmgr: update {module} on {date}"
+.EE
+.RE
+
+.SS "Tree Folding Strategies"
+.TP
+.B directory
+(default) Links entire directories when possible, minimizes symlinks created
+.TP  
+.B aggressive
+More aggressive about replacing existing directories, may create deeper symlink structures
+
+.SH GIT INTEGRATION
+.SS "Repository Management"
+Add repositories to NDMGR:
+.PP
+.RS 4
+.EX
+ndmgr --add-repo --name dotfiles --path ~/dotfiles \\
+    --remote git@github.com:user/dotfiles.git
+.EE
+.RE
+
+.SS "Repository Operations"
+.TP
+.B Single repository
+.RS 4
+.EX
+ndmgr --pull --repository dotfiles
+ndmgr --push --repository dotfiles  
+.EE
+.RE
+.TP
+.B Multi-repository
+.RS 4
+.EX  
+ndmgr --pull-all
+ndmgr --push-all
+ndmgr --sync
+.EE
+.RE
+
+.SS "Commit Message Templates"
+Templates support variables:
+.IP \(bu 4
+\fB{module}\fR: Module name being updated
+.IP \(bu 4  
+\fB{date}\fR: Current date (YYYY-MM-DD format)
+
+.SH FORCE MODES
+.TP
+.B --force
+Override conflicts automatically using default behavior
+.TP
+.B --force yes  
+Answer "yes" to all interactive prompts
+.TP
+.B --force no
+Answer "no" to all interactive prompts
+
+.SH PATTERN MATCHING
+NDMGR supports basic glob patterns:
+.IP \(bu 4
+\fB*.ext\fR: Match files ending with extension
+.IP \(bu 4
+\fBprefix*\fR: Match files starting with prefix
+.IP \(bu 4  
+\fB*substring*\fR: Match files containing substring
+.IP \(bu 4
+\fBexact-name\fR: Match exact filename
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.B NDMGR_CONFIG_DIR
+Override default configuration directory
+.TP
+.B XDG_CONFIG_HOME  
+Respects XDG Base Directory specification
+
+.SS "Configuration Override Examples"
+.PP
+.RS 4
+.EX
+# Use custom configuration directory
+export NDMGR_CONFIG_DIR=/tmp/test-config
+ndmgr --init-config
+
+# Use XDG_CONFIG_HOME for testing environment  
+export NDMGR_CONFIG_DIR=$XDG_CONFIG_HOME/ndmgr_testing
+ndmgr --init-config
+.EE
+.RE
+
+.SH EXAMPLES
+.SS "Initial Setup"
+.PP
+.RS 4
+.EX
+# Initialize configuration
+ndmgr --init-config
+
+# Add your dotfiles repository
+ndmgr --add-repo --name dotfiles --path ~/dotfiles \\
+    --remote git@github.com:user/dotfiles.git
+
+# Deploy all modules
+ndmgr --sync
+.EE
+.RE
+
+.SS "Basic Operations"
+.PP
+.RS 4
+.EX
+# Link a single module
+ndmgr vim
+
+# Link multiple modules
+ndmgr vim git tmux
+
+# Unlink a module
+ndmgr --unlink vim
+
+# Relink a module
+ndmgr --relink vim
+.EE
+.RE
+
+.SS "Advanced Usage"  
+.PP
+.RS 4
+.EX
+# Deploy with conflict resolution
+ndmgr --deploy --force yes
+
+# Deploy specific directory with custom target
+ndmgr --deploy --dir ~/work-config --target ~/work-env
+
+# Link with ignore patterns
+ndmgr --ignore "*.log" --ignore "node_modules" web-config
+
+# Verbose dry run
+ndmgr --simulate --verbose --deploy
+.EE
+.RE
+
+.SH FILES
+.TP
+.I ~/.config/ndmgr/config.toml
+Main configuration file
+.TP
+.I ~/.config/ndmgr/config.toml.bkp.*
+Configuration backups (automatically created)
+.TP  
+.I MODULE/.ndmgr
+Module-specific configuration file
+
+.SH TROUBLESHOOTING
+.SS "Diagnostic Commands"
+.PP  
+.RS 4
+.EX
+# Show what would happen without doing it
+ndmgr --simulate --verbose --deploy
+
+# Check module structure  
+ls -la dotfiles/module-name/
+
+# Verify configuration
+ndmgr --config
+
+# Check repository status
+ndmgr --repos
+ndmgr --status
+.EE
+.RE
+
+.SS "Common Issues"
+.TP  
+.B "Module not found"
+Check directory structure, verify scan depth, use verbose mode
+.TP
+.B "Git operation failed"
+Verify git availability, check repository configuration
+.TP
+.B "Permission denied"  
+Check target directory permissions, verify source directory access
+.TP
+.B "Conflicts detected"
+Use simulation mode, configure automatic resolution, or use force mode
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1  
+General error or conflict detected
+.TP
+.B >1
+Specific error codes for different failure modes
+
+.SH AUTHOR
+Written by Yuval Adar.
+
+.SH COPYRIGHT
+Released under the MIT License.
+
+.SH SEE ALSO
+.BR git (1),
+.BR ln (1),
+.BR stow (8)
