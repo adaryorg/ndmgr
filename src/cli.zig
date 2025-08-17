@@ -128,6 +128,12 @@ pub const Args = struct {
     repo_branch: ?[]const u8 = null,
     module_name: ?[]const u8 = null,
     
+    pub fn deinit(self: Args, allocator: std.mem.Allocator) void {
+        allocator.free(self.packages);
+        allocator.free(self.source_dir);
+        allocator.free(self.target_dir);
+        allocator.free(self.ignore_patterns);
+    }
 };
 
 pub fn parseArgs(allocator: std.mem.Allocator) !Args {

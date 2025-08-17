@@ -106,8 +106,7 @@ pub const GitOperations = struct {
         
         // Reset working directory to HEAD (discard local changes)
         const reset_result = try self.runGitCommandInRepo(repo_path, &[_][]const u8{ "reset", "--hard", "HEAD" });
-        defer self.allocator.free(reset_result.stdout);
-        defer self.allocator.free(reset_result.stderr);
+        defer reset_result.deinit(self.allocator);
         
         if (reset_result.exit_code != 0) {
             if (self.verbose) {
@@ -118,8 +117,7 @@ pub const GitOperations = struct {
         
         // Clean untracked files
         const clean_result = try self.runGitCommandInRepo(repo_path, &[_][]const u8{ "clean", "-fd" });
-        defer self.allocator.free(clean_result.stdout);
-        defer self.allocator.free(clean_result.stderr);
+        defer clean_result.deinit(self.allocator);
         
         if (clean_result.exit_code != 0) {
             if (self.verbose) {
@@ -147,8 +145,7 @@ pub const GitOperations = struct {
         }
         
         const result = try self.runGitCommand(pull_args.items);
-        defer self.allocator.free(result.stdout);
-        defer self.allocator.free(result.stderr);
+        defer result.deinit(self.allocator);
         
         if (result.exit_code != 0) {
             if (self.verbose) {
@@ -190,8 +187,7 @@ pub const GitOperations = struct {
         }
         
         const result = try self.runGitCommand(push_args.items);
-        defer self.allocator.free(result.stdout);
-        defer self.allocator.free(result.stderr);
+        defer result.deinit(self.allocator);
         
         if (result.exit_code != 0) {
             if (self.verbose) {
@@ -225,8 +221,7 @@ pub const GitOperations = struct {
         try clone_args.append(local_path);
         
         const result = try self.runGitCommand(clone_args.items);
-        defer self.allocator.free(result.stdout);
-        defer self.allocator.free(result.stderr);
+        defer result.deinit(self.allocator);
         
         if (result.exit_code != 0) {
             if (self.verbose) {
@@ -247,8 +242,7 @@ pub const GitOperations = struct {
         
         // Check for any changes (staged, unstaged, or untracked)
         const status_result = try self.runGitCommandInRepo(repo_path, &[_][]const u8{ "status", "--porcelain" });
-        defer self.allocator.free(status_result.stdout);
-        defer self.allocator.free(status_result.stderr);
+        defer status_result.deinit(self.allocator);
         
         if (status_result.exit_code != 0) {
             return GitError.GitCommandFailed;
@@ -270,8 +264,7 @@ pub const GitOperations = struct {
         // Add files if requested
         if (add_all) {
             const add_result = try self.runGitCommandInRepo(repo_path, &[_][]const u8{ "add", "." });
-            defer self.allocator.free(add_result.stdout);
-            defer self.allocator.free(add_result.stderr);
+            defer add_result.deinit(self.allocator);
             
             if (add_result.exit_code != 0) {
                 return GitError.GitCommandFailed;
@@ -280,8 +273,7 @@ pub const GitOperations = struct {
         
         // Commit changes
         const commit_result = try self.runGitCommandInRepo(repo_path, &[_][]const u8{ "commit", "-m", message });
-        defer self.allocator.free(commit_result.stdout);
-        defer self.allocator.free(commit_result.stderr);
+        defer commit_result.deinit(self.allocator);
         
         if (commit_result.exit_code != 0) {
             if (std.mem.indexOf(u8, commit_result.stdout, "nothing to commit") != null) {
@@ -317,8 +309,7 @@ pub const GitOperations = struct {
         try checkout_args.append(branch);
             
         const result = try self.runGitCommandInRepo(repo_path, checkout_args.items);
-        defer self.allocator.free(result.stdout);
-        defer self.allocator.free(result.stderr);
+        defer result.deinit(self.allocator);
         
         if (result.exit_code != 0) {
             return GitError.GitCommandFailed;
@@ -335,6 +326,11 @@ pub const GitOperations = struct {
         exit_code: u8,
         stdout: []const u8,
         stderr: []const u8,
+        
+        pub fn deinit(self: CommandResult, allocator: std.mem.Allocator) void {
+            allocator.free(self.stdout);
+            allocator.free(self.stderr);
+        }
     };
     
     fn runGitCommand(self: *GitOperations, args: []const []const u8) !CommandResult {
