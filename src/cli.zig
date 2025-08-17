@@ -33,6 +33,77 @@ pub const Action = enum {
     version,
 };
 
+// Map command-line arguments to actions
+const ActionMap = std.StaticStringMap(Action).initComptime(.{
+    .{ "-l", .link },
+    .{ "--link", .link },
+    .{ "-u", .unlink },
+    .{ "--unlink", .unlink },
+    .{ "-r", .relink },
+    .{ "--relink", .relink },
+    .{ "--deploy", .deploy },
+    .{ "--pull", .pull },
+    .{ "--push", .push },
+    .{ "--config", .config },
+    .{ "--add-repo", .add_repo },
+    .{ "--init-config", .init_config },
+    .{ "--status", .status },
+    .{ "--repos", .repos },
+    .{ "--info", .info },
+    .{ "--push-all", .push_all },
+    .{ "--pull-all", .pull_all },
+    .{ "--sync", .sync },
+    .{ "--init-repo", .init_repo },
+    .{ "--version", .version },
+});
+
+// Option types for non-action arguments
+const OptionType = enum {
+    verbose,
+    dry_run,
+    source_dir,
+    target_dir,
+    repository,
+    force,
+    ignore,
+    repo_name,
+    repo_path,
+    repo_remote,
+    repo_branch,
+    module_name,
+    help,
+};
+
+// Map command-line options to their types
+const OptionMap = std.StaticStringMap(OptionType).initComptime(.{
+    .{ "-v", .verbose },
+    .{ "--verbose", .verbose },
+    .{ "-n", .dry_run },
+    .{ "--simulate", .dry_run },
+    .{ "-d", .source_dir },
+    .{ "--dir", .source_dir },
+    .{ "-t", .target_dir },
+    .{ "--target", .target_dir },
+    .{ "--repository", .repository },
+    .{ "-f", .force },
+    .{ "--force", .force },
+    .{ "-i", .ignore },
+    .{ "--ignore", .ignore },
+    .{ "--name", .repo_name },
+    .{ "--path", .repo_path },
+    .{ "--remote", .repo_remote },
+    .{ "--branch", .repo_branch },
+    .{ "--module", .module_name },
+    .{ "-h", .help },
+    .{ "--help", .help },
+});
+
+// Map force mode strings to ForceMode enum values
+const ForceModeMap = std.StaticStringMap(ForceMode).initComptime(.{
+    .{ "yes", .yes },
+    .{ "no", .no },
+});
+
 pub const Args = struct {
     action: Action,
     packages: [][]const u8,
@@ -95,95 +166,85 @@ pub fn parseArgs(allocator: std.mem.Allocator) !Args {
             reprocess_arg = null;
             break :blk reprocess;
         } else args_it.next() orelse break;
-        if (std.mem.eql(u8, arg, "-l") or std.mem.eql(u8, arg, "--link")) {
-            action = .link;
-        } else if (std.mem.eql(u8, arg, "-u") or std.mem.eql(u8, arg, "--unlink")) {
-            action = .unlink;
-        } else if (std.mem.eql(u8, arg, "-r") or std.mem.eql(u8, arg, "--relink")) {
-            action = .relink;
-        } else if (std.mem.eql(u8, arg, "--deploy")) {
-            action = .deploy;
-        } else if (std.mem.eql(u8, arg, "--pull")) {
-            action = .pull;
-        } else if (std.mem.eql(u8, arg, "--push")) {
-            action = .push;
-        } else if (std.mem.eql(u8, arg, "--config")) {
-            action = .config;
-        } else if (std.mem.eql(u8, arg, "--add-repo")) {
-            action = .add_repo;
-        } else if (std.mem.eql(u8, arg, "--init-config")) {
-            action = .init_config;
-        } else if (std.mem.eql(u8, arg, "--status")) {
-            action = .status;
-        } else if (std.mem.eql(u8, arg, "--repos")) {
-            action = .repos;
-        } else if (std.mem.eql(u8, arg, "--info")) {
-            action = .info;
-        } else if (std.mem.eql(u8, arg, "--push-all")) {
-            action = .push_all;
-        } else if (std.mem.eql(u8, arg, "--pull-all")) {
-            action = .pull_all;
-        } else if (std.mem.eql(u8, arg, "--sync")) {
-            action = .sync;
-        } else if (std.mem.eql(u8, arg, "--init-repo")) {
-            action = .init_repo;
-        } else if (std.mem.eql(u8, arg, "--version")) {
-            action = .version;
-        } else if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--verbose")) {
-            verbose = true;
-        } else if (std.mem.eql(u8, arg, "-n") or std.mem.eql(u8, arg, "--simulate")) {
-            dry_run = true;
-        } else if (std.mem.eql(u8, arg, "-d") or std.mem.eql(u8, arg, "--dir")) {
-            source_dir = args_it.next() orelse return error.MissingArgument;
-            explicit_source_dir = true;
-        } else if (std.mem.eql(u8, arg, "-t") or std.mem.eql(u8, arg, "--target")) {
-            target_dir = args_it.next() orelse return error.MissingArgument;
-            explicit_target_dir = true;
-        } else if (std.mem.eql(u8, arg, "--repository")) {
-            repository = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "-f") or std.mem.eql(u8, arg, "--force")) {
-            // Check if next argument is a force mode (yes/no)
-            const next_arg = args_it.next();
-            if (next_arg) |mode| {
-                if (std.mem.eql(u8, mode, "yes")) {
-                    force = ForceMode.yes;
-                } else if (std.mem.eql(u8, mode, "no")) {
-                    force = ForceMode.no;
-                } else if (std.mem.startsWith(u8, mode, "-")) {
-                    // This is another option, not a force mode
-                    force = ForceMode.default;
-                    // Process this option in the next iteration
-                    reprocess_arg = mode;
-                } else {
-                    // This appears to be a package name, not a force mode
-                    force = ForceMode.default;
-                    // Treat the argument as a package name
-                    try packages.append(mode);
-                }
-            } else {
-                // No argument after --force, use default behavior
-                force = ForceMode.default;
+        
+        // Check if it's an action
+        if (ActionMap.get(arg)) |found_action| {
+            action = found_action;
+            continue;
+        }
+        
+        // Check if it's an option
+        if (OptionMap.get(arg)) |option_type| {
+            switch (option_type) {
+                .verbose => verbose = true,
+                .dry_run => dry_run = true,
+                .source_dir => {
+                    source_dir = args_it.next() orelse return error.MissingArgument;
+                    explicit_source_dir = true;
+                },
+                .target_dir => {
+                    target_dir = args_it.next() orelse return error.MissingArgument;
+                    explicit_target_dir = true;
+                },
+                .repository => {
+                    repository = args_it.next() orelse return error.MissingArgument;
+                },
+                .force => {
+                    // Check if next argument is a force mode (yes/no)
+                    const next_arg = args_it.next();
+                    if (next_arg) |mode| {
+                        // Try to parse as a force mode value
+                        if (ForceModeMap.get(mode)) |force_mode| {
+                            force = force_mode;
+                        } else if (std.mem.startsWith(u8, mode, "-")) {
+                            // This is another option, not a force mode
+                            force = ForceMode.default;
+                            // Process this option in the next iteration
+                            reprocess_arg = mode;
+                        } else {
+                            // This appears to be a package name, not a force mode
+                            force = ForceMode.default;
+                            // Treat the argument as a package name
+                            try packages.append(mode);
+                        }
+                    } else {
+                        // No argument after --force, use default behavior
+                        force = ForceMode.default;
+                    }
+                },
+                .ignore => {
+                    const pattern = args_it.next() orelse return error.MissingArgument;
+                    try ignore_patterns.append(pattern);
+                },
+                .repo_name => {
+                    repo_name = args_it.next() orelse return error.MissingArgument;
+                },
+                .repo_path => {
+                    repo_path = args_it.next() orelse return error.MissingArgument;
+                },
+                .repo_remote => {
+                    repo_remote = args_it.next() orelse return error.MissingArgument;
+                },
+                .repo_branch => {
+                    repo_branch = args_it.next() orelse return error.MissingArgument;
+                },
+                .module_name => {
+                    module_name = args_it.next() orelse return error.MissingArgument;
+                },
+                .help => {
+                    printHelp();
+                    process.exit(0);
+                },
             }
-        } else if (std.mem.eql(u8, arg, "-i") or std.mem.eql(u8, arg, "--ignore")) {
-            const pattern = args_it.next() orelse return error.MissingArgument;
-            try ignore_patterns.append(pattern);
-        } else if (std.mem.eql(u8, arg, "--name")) {
-            repo_name = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "--path")) {
-            repo_path = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "--remote")) {
-            repo_remote = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "--branch")) {
-            repo_branch = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "--module")) {
-            module_name = args_it.next() orelse return error.MissingArgument;
-        } else if (std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "--help")) {
-            printHelp();
-            process.exit(0);
-        } else if (arg[0] == '-') {
+            continue;
+        }
+        
+        // Handle unknown options or positional arguments
+        if (arg[0] == '-') {
             std.debug.print("Unknown option: {s}\n", .{arg});
             process.exit(1);
         } else {
+            // Handle positional arguments
             if (action == .config and config_key == null) {
                 config_key = arg;
             } else {
