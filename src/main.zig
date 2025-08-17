@@ -16,10 +16,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     const args = try cli.parseArgs(allocator);
-    defer allocator.free(args.packages);
-    defer allocator.free(args.source_dir);
-    defer allocator.free(args.target_dir);
-    defer allocator.free(args.ignore_patterns);
+    defer args.deinit(allocator);
     
     var config_mgr = try config.ConfigManager.init(allocator);
     defer config_mgr.deinit();
