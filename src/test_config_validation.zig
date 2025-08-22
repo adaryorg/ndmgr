@@ -23,7 +23,7 @@ test "Config Validation: Configuration structure creation" {
     try testing.expectEqual(@as(u32, 0), config_with_repos.repositories.count());
     // Note: config fields may not be optional, so just verify they exist
     _ = config_with_repos.config.git;
-    _ = config_with_repos.config.deployment;
+    _ = config_with_repos.config.linking;
     _ = config_with_repos.config.settings;
 }
 

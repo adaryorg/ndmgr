@@ -11,8 +11,9 @@ test {
     _ = @import("test_module_scanner.zig");
     _ = @import("pattern_utils.zig");
     _ = @import("test_utils.zig");
-    // Note: Config-related tests (test_config.zig, test_repository_manager.zig, 
-    // test_config_manager.zig, test_config_validation.zig) are temporarily disabled 
-    // due to zig build test hanging issues with toml dependency.
-    // These tests pass when run individually with proper dependencies.
+    _ = @import("test_config.zig");
+    _ = @import("test_repository_manager.zig");
+    // Note: Some config tests are disabled due to filesystem interaction causing hangs
+    // _ = @import("test_config_manager.zig");  // Hangs due to ConfigManager.init()
+    // _ = @import("test_config_validation.zig");  // Hangs due to ConfigManager.init()
 }

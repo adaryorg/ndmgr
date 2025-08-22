@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Cross-Platform Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for git describe and version info
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.14.1
+
+    - name: Verify Zig installation
+      run: zig version
+
+    - name: Run tests before building
+      run: make test
+
+    - name: Build all platform binaries
+      run: make build
+
+    - name: Verify binaries were created
+      run: |
+        echo "Checking created binaries:"
+        ls -la zig-out/bin/ndmgr-*
+        echo ""
+        echo "Binary details:"
+        file zig-out/bin/ndmgr-*
+
+    - name: Test Linux binary
+      run: |
+        echo "Testing Linux binary:"
+        ./zig-out/bin/ndmgr-linux-x86_64 --version
+        ./zig-out/bin/ndmgr-linux-x86_64 --help
+
+    - name: Generate checksums
+      run: |
+        cd zig-out/bin
+        sha256sum ndmgr-* > checksums.txt
+        echo "Generated checksums:"
+        cat checksums.txt
+
+    - name: Get version from git tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: "nwiz ${{ steps.version.outputs.version }}"
+        files: |
+          zig-out/bin/nwiz-linux-x86_64
+          zig-out/bin/nwiz-macos-x86_64
+          zig-out/bin/nwiz-macos-aarch64
+          zig-out/bin/checksums.txt
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## nwiz TUI ${{ steps.version.outputs.version }}
+          
+          Cross-platform binaries for nwiz.
+          
+          ### Downloads
+          
+          | Platform | Architecture | Download |
+          |----------|--------------|----------|
+          | Linux | x86_64 | `nwiz-linux-x86_64` |
+          | macOS | Intel (x86_64) | `nwiz-macos-x86_64` |
+          | macOS | Apple Silicon (ARM64) | `nwiz-macos-aarch64` |
+          
+          ### Installation
+          
+          **Linux:**
+          ```bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-linux-x86_64
+          chmod +x nwiz-linux-x86_64
+          sudo mv nwiz-linux-x86_64 /usr/local/bin/nwiz
+          ```
+          
+          **macOS (Intel):**
+          ```bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-macos-x86_64
+          chmod +x nwiz-macos-x86_64
+          sudo mv nwiz-macos-x86_64 /usr/local/bin/nwiz
+          ```
+          
+          **macOS (Apple Silicon):**
+          ```bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-macos-aarch64
+          chmod +x nwiz-macos-aarch64
+          sudo mv nwiz-macos-aarch64 /usr/local/bin/nwiz
+          ```
+          
+          ### Verification
+          ```bash
+          # Download checksums and verify
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/checksums.txt
+          sha256sum -c checksums.txt
+          ```
+          
+          ### Usage
+          ```bash
+          nwiz --help
+          nwiz --version
+          ```
+          
+          All binaries are built using Zig's cross-compilation from Linux and have been verified for correct architecture targeting.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

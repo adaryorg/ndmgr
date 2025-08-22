@@ -1,0 +1,48 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Test Linux Binary
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for git describe and version info
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.14.1
+
+    - name: Verify Zig installation
+      run: zig version
+
+    - name: Build project
+      run: zig build
+
+    - name: Run tests
+      run: make test
+
+    - name: Test version output
+      run: ./zig-out/bin/ndmgr --version
+
+    - name: Test help output
+      run: ./zig-out/bin/ndmgr --help
+
+    - name: Upload Linux binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nwiz-linux-x86_64-${{ github.sha }}
+        path: zig-out/bin/nwiz
+        retention-days: 90
