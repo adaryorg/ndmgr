@@ -74,6 +74,7 @@ jobs:
         prerelease: false
         generate_release_notes: true
         body: |
+
           ## ndmgr TUI ${{ steps.version.outputs.version }}
           
           Cross-platform binaries for ndmgr.
@@ -82,6 +83,7 @@ jobs:
           
           | Platform | Architecture | Download |
           |----------|--------------|----------|
+
           | Linux | x86_64 | `ndmgr-linux-x86_64` |
           | macOS | Intel (x86_64) | `ndmgr-macos-x86_64` |
           | macOS | Apple Silicon (ARM64) | `ndmgr-macos-aarch64` |
@@ -90,6 +92,7 @@ jobs:
           
           **Linux:**
           ```bash
+
           wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/ndmgr-linux-x86_64
           chmod +x ndmgr-linux-x86_64
           sudo mv ndmgr-linux-x86_64 /usr/local/bin/ndmgr
