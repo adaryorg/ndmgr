@@ -43,6 +43,7 @@ jobs:
     - name: Upload Linux binary artifact
       uses: actions/upload-artifact@v4
       with:
-        name: nwiz-linux-x86_64-${{ github.sha }}
-        path: zig-out/bin/nwiz
+
+        name: ndmgr-linux-x86_64-${{ github.sha }}
+        path: zig-out/bin/ndmgr
         retention-days: 90

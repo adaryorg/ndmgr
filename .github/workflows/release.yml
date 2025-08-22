@@ -64,49 +64,52 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.version.outputs.version }}
-        name: "nwiz ${{ steps.version.outputs.version }}"
+        name: "ndmgr ${{ steps.version.outputs.version }}"
         files: |
-          zig-out/bin/nwiz-linux-x86_64
-          zig-out/bin/nwiz-macos-x86_64
-          zig-out/bin/nwiz-macos-aarch64
+          zig-out/bin/ndmgr-linux-x86_64
+          zig-out/bin/ndmgr-macos-x86_64
+          zig-out/bin/ndmgr-macos-aarch64
           zig-out/bin/checksums.txt
         draft: false
         prerelease: false
         generate_release_notes: true
         body: |
-          ## nwiz TUI ${{ steps.version.outputs.version }}
+
+          ## ndmgr TUI ${{ steps.version.outputs.version }}
           
-          Cross-platform binaries for nwiz.
+          Cross-platform binaries for ndmgr.
           
           ### Downloads
           
           | Platform | Architecture | Download |
           |----------|--------------|----------|
-          | Linux | x86_64 | `nwiz-linux-x86_64` |
-          | macOS | Intel (x86_64) | `nwiz-macos-x86_64` |
-          | macOS | Apple Silicon (ARM64) | `nwiz-macos-aarch64` |
+
+          | Linux | x86_64 | `ndmgr-linux-x86_64` |
+          | macOS | Intel (x86_64) | `ndmgr-macos-x86_64` |
+          | macOS | Apple Silicon (ARM64) | `ndmgr-macos-aarch64` |
           
           ### Installation
           
           **Linux:**
           ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-linux-x86_64
-          chmod +x nwiz-linux-x86_64
-          sudo mv nwiz-linux-x86_64 /usr/local/bin/nwiz
+
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/ndmgr-linux-x86_64
+          chmod +x ndmgr-linux-x86_64
+          sudo mv ndmgr-linux-x86_64 /usr/local/bin/ndmgr
           ```
           
           **macOS (Intel):**
           ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-macos-x86_64
-          chmod +x nwiz-macos-x86_64
-          sudo mv nwiz-macos-x86_64 /usr/local/bin/nwiz
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/ndmgr-macos-x86_64
+          chmod +x ndmgr-macos-x86_64
+          sudo mv ndmgr-macos-x86_64 /usr/local/bin/ndmgr
           ```
           
           **macOS (Apple Silicon):**
           ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nwiz-macos-aarch64
-          chmod +x nwiz-macos-aarch64
-          sudo mv nwiz-macos-aarch64 /usr/local/bin/nwiz
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/ndmgr-macos-aarch64
+          chmod +x ndmgr-macos-aarch64
+          sudo mv ndmgr-macos-aarch64 /usr/local/bin/ndmgr
           ```
           
           ### Verification
@@ -118,8 +121,8 @@ jobs:
           
           ### Usage
           ```bash
-          nwiz --help
-          nwiz --version
+          ndmgr --help
+          ndmgr --version
           ```
           
           All binaries are built using Zig's cross-compilation from Linux and have been verified for correct architecture targeting.
