@@ -57,6 +57,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Add version information to tests
+    unit_tests.root_module.addOptions("version", version_options);
+
     // Add toml dependency to tests
     unit_tests.root_module.addImport("toml", toml_dep.module("toml"));
 

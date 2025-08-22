@@ -41,13 +41,7 @@ clean:
 	rm -rf zig-out zig-cache .zig-cache
 
 test:
-	zig test src/test_git_operations.zig
-	zig test src/test_repository_manager.zig
-	zig test src/test_module_scanner.zig
-	zig test src/test_advanced_linker.zig
-	@echo "Running functional tests..."
-	@chmod +x tests/test_suite.sh
-	@cd tests && ./test_suite.sh
+	zig build test --summary all
 
 install:
 	@echo "Installing ndmgr for $(UNAME_S) $(UNAME_M)..."
