@@ -24,7 +24,9 @@ pub const ConfigurationManager = struct {
     }
     
     pub fn showConfiguration(self: *ConfigurationManager, key: ?[]const u8) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         var config_with_repos = self.config_mgr.loadConfig() catch |err| switch (err) {
             error.FileNotFound => {
@@ -44,7 +46,9 @@ pub const ConfigurationManager = struct {
     
     fn showConfigurationKey(self: *ConfigurationManager, key: []const u8, config_with_repos: *const config.ConfigWithRepositories) !void {
         _ = self;
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         if (std.mem.eql(u8, key, "git.conflict_resolution")) {
             std.debug.print("{s}\n", .{@tagName(config_with_repos.config.git.conflict_resolution)});
@@ -77,7 +81,9 @@ pub const ConfigurationManager = struct {
     }
     
     fn showAllConfiguration(self: *ConfigurationManager, config_with_repos: *const config.ConfigWithRepositories) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         try stdout.print("NDMGR Configuration\n", .{});
         try stdout.print("==================\n\n", .{});
@@ -163,7 +169,9 @@ pub const ConfigurationManager = struct {
     }
     
     pub fn addRepository(self: *ConfigurationManager, name: []const u8, path: []const u8, remote: []const u8, branch: ?[]const u8) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         const config_file_path = self.config_mgr.config_file;
         
         const config_exists = blk: {
@@ -222,7 +230,9 @@ pub const ConfigurationManager = struct {
     
     
     pub fn initializeConfiguration(self: *ConfigurationManager) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         try self.config_mgr.ensureConfigDir();
         
         // Check if config file already exists
@@ -267,9 +277,10 @@ pub const ConfigurationManager = struct {
                 
                 std.debug.print("\nDo you want to proceed and destroy the existing configuration? [y/N]: ", .{});
                 
-                const stdin = std.io.getStdIn().reader();
-                var buf: [10]u8 = undefined;
-                const input = (try stdin.readUntilDelimiterOrEof(buf[0..], '\n')) orelse "";
+                var stdin_buffer: [1024]u8 = undefined;
+    var file_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &file_reader.interface;
+                const input = stdin.takeDelimiterExclusive('\n') catch "";
                 const trimmed = std.mem.trim(u8, input, " \t\n\r");
                 
                 if (!std.mem.eql(u8, trimmed, "y") and !std.mem.eql(u8, trimmed, "Y")) {
@@ -290,7 +301,9 @@ pub const ConfigurationManager = struct {
     
     /// Creates a smart backup of the config file with date-counter format and duplicate detection
     fn createSmartConfigBackup(self: *ConfigurationManager) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         // Get current date in YYYYMMDD format
         const timestamp = std.time.timestamp();
@@ -388,7 +401,9 @@ pub const ConfigurationManager = struct {
     }
     
     pub fn showSystemStatus(self: *ConfigurationManager) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         
         // Configuration status
@@ -441,7 +456,9 @@ pub const ConfigurationManager = struct {
     }
     
     fn showModuleStatus(self: *ConfigurationManager) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         // Check if current working directory is a git repository
         var git_operations = git_ops.GitOperations.init(self.allocator);
@@ -486,7 +503,9 @@ pub const ConfigurationManager = struct {
     }
     
     pub fn listRepositories(self: *ConfigurationManager) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         var config_with_repos = self.config_mgr.loadConfig() catch |err| switch (err) {
             error.FileNotFound => {

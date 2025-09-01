@@ -5,6 +5,7 @@ const std = @import("std");
 const fs = std.fs;
 const process = std.process;
 
+
 pub const ForceMode = enum {
     none,      // Not specified, use interactive mode
     default,   // --force without parameter, override conflicts but use defaults for prompts
@@ -143,7 +144,7 @@ pub fn parseArgs(allocator: std.mem.Allocator) !Args {
     _ = args_it.next();
     
     var action = Action.link;
-    var packages = std.ArrayList([]const u8).init(allocator);
+    var packages = std.array_list.AlignedManaged([]const u8, null).init(allocator);
     var source_dir: ?[]const u8 = null;
     var target_dir: ?[]const u8 = null;
     var explicit_source_dir = false;
@@ -154,7 +155,7 @@ pub fn parseArgs(allocator: std.mem.Allocator) !Args {
     var force = ForceMode.none;
     
     // Ignore patterns for link/unlink operations
-    var ignore_patterns = std.ArrayList([]const u8).init(allocator);
+    var ignore_patterns = std.array_list.AlignedManaged([]const u8, null).init(allocator);
     
     // For handling --force option parsing
     var reprocess_arg: ?[]const u8 = null;
@@ -314,7 +315,10 @@ pub fn parseArgs(allocator: std.mem.Allocator) !Args {
 
 pub fn printVersion() void {
     const version = @import("version");
-    const stdout = std.io.getStdOut().writer();
+    
+    var buffer: [256]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
     
     stdout.print(
         \\ndmgr (Nocturne Dotfile Manager) {s}
@@ -323,13 +327,17 @@ pub fn printVersion() void {
         \\Released under the MIT License: https://opensource.org/licenses/MIT
         \\
     , .{ version.version, version.commit, version.build_time }) catch {};
+    stdout.flush() catch {};
 }
 
 pub fn printHelp() void {
     const home = std.process.getEnvVarOwned(std.heap.page_allocator, "HOME") catch unreachable;
     defer std.heap.page_allocator.free(home);
     
-    const stdout = std.io.getStdOut().writer();
+    var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
+    
     stdout.print(
         \\ndmgr - Nocturne Dotfile Manager
         \\A symlink farm manager with git integration
@@ -377,4 +385,5 @@ pub fn printHelp() void {
         \\      --module MODULE      Module name (for --info)
         \\
     , .{home}) catch {};
+    stdout.flush() catch {};
 }

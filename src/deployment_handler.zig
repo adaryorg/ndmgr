@@ -28,7 +28,9 @@ pub const DeploymentHandler = struct {
     }
     
     pub fn deploy(self: *DeploymentHandler, args: cli.Args) !DeploymentResult {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         try stdout.print("Starting module deployment...\n", .{});
         
         var setup_data = try self.setupDeployment(args);
@@ -65,7 +67,9 @@ pub const DeploymentHandler = struct {
     };
     
     fn setupDeployment(self: *DeploymentHandler, args: cli.Args) !SetupData {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         const cfg_mgr = try config.ConfigManager.init(self.allocator);
         errdefer cfg_mgr.deinit();
         
@@ -96,8 +100,10 @@ pub const DeploymentHandler = struct {
         setup_data.deinit();
     }
     
-    fn scanAndValidateModules(self: *DeploymentHandler, args: cli.Args, setup_data: *SetupData) !std.ArrayList(module_scanner.ModuleInfo) {
-        const stdout = std.io.getStdOut().writer();
+    fn scanAndValidateModules(self: *DeploymentHandler, args: cli.Args, setup_data: *SetupData) !std.array_list.AlignedManaged(module_scanner.ModuleInfo, null) {
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         // Scan for modules
         var modules = setup_data.scanner.scanForModules(args.source_dir) catch |err| {
             error_reporter.ErrorReporter.reportScanningError(err);
@@ -128,14 +134,14 @@ pub const DeploymentHandler = struct {
         return modules;
     }
     
-    fn cleanupModules(self: *DeploymentHandler, modules: *std.ArrayList(module_scanner.ModuleInfo)) void {
+    fn cleanupModules(self: *DeploymentHandler, modules: *std.array_list.AlignedManaged(module_scanner.ModuleInfo, null)) void {
         for (modules.items) |module| {
             module.deinit(self.allocator);
         }
         modules.deinit();
     }
     
-    fn sortModules(self: *DeploymentHandler, modules: *std.ArrayList(module_scanner.ModuleInfo), scanner: *module_scanner.ModuleScanner) ![]const module_scanner.ModuleInfo {
+    fn sortModules(self: *DeploymentHandler, modules: *std.array_list.AlignedManaged(module_scanner.ModuleInfo, null), scanner: *module_scanner.ModuleScanner) ![]const module_scanner.ModuleInfo {
         _ = self;
         return scanner.sortModulesByName(modules.items) catch |err| {
             error_reporter.ErrorReporter.reportSortingError(err);
@@ -158,7 +164,9 @@ pub const DeploymentHandler = struct {
     }
     
     fn deploySingleModule(self: *DeploymentHandler, args: cli.Args, module: module_scanner.ModuleInfo, setup_data: *SetupData) !bool {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         // Check if module should be ignored
         if (module.ignore) {
@@ -190,7 +198,9 @@ pub const DeploymentHandler = struct {
     }
     
     fn checkModuleConflicts(self: *DeploymentHandler, args: cli.Args, module: module_scanner.ModuleInfo, setup_data: *SetupData) !bool {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         var scanner = setup_data.scanner;
         
         const conflict = scanner.checkModuleConflicts(&module, args.target_dir) catch |err| {
@@ -217,7 +227,9 @@ pub const DeploymentHandler = struct {
     }
     
     fn performModuleLinking(self: *DeploymentHandler, args: cli.Args, module: module_scanner.ModuleInfo, setup_data: *SetupData) !bool {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         const target_dir_raw = if (module.target_dir) |custom_target| custom_target else args.target_dir;
         const target_dir = linker.validateAndExpandTargetDirectory(self.allocator, target_dir_raw, module.name) catch |err| {
             if (args.verbose) {
@@ -273,7 +285,9 @@ pub const DeploymentHandler = struct {
     
     fn reportResults(self: *DeploymentHandler, result: DeploymentResult) !void {
         _ = self;
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         if (result.isFullSuccess()) {
             try stdout.print("Deployment completed successfully. Processed {} modules.\n", .{result.deployed_count});
         } else {

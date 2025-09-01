@@ -159,7 +159,9 @@ pub fn handleInitRepo(allocator: std.mem.Allocator, args: cli.Args) !void {
 }
 
 pub fn handleSimpleUnlink(allocator: std.mem.Allocator, package_name: []const u8, verbose: bool) !void {
-    const stdout = std.io.getStdOut().writer();
+    var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
     if (verbose) try stdout.print("Simple unlink mode: processing module '{s}'\n", .{package_name});
     
     // Check if the module exists in current directory  

@@ -466,9 +466,9 @@ pub const Linker = struct {
         const target_dir = fs.path.dirname(target_path) orelse ".";
         
         // Split both paths into components
-        var source_components = std.ArrayList([]const u8).init(self.allocator);
+        var source_components = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer source_components.deinit();
-        var target_components = std.ArrayList([]const u8).init(self.allocator);
+        var target_components = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer target_components.deinit();
         
         var source_iter = fs.path.componentIterator(source_path) catch return self.allocator.dupe(u8, source_path);
@@ -494,7 +494,7 @@ pub const Linker = struct {
         }
         
         // Build relative path
-        var relative_parts = std.ArrayList([]const u8).init(self.allocator);
+        var relative_parts = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer relative_parts.deinit();
         
         const up_levels = target_components.items.len - common_prefix_len;

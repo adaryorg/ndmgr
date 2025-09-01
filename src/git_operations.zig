@@ -56,9 +56,10 @@ pub const GitOperations = struct {
                     std.debug.print("  3) Cancel operation\n", .{});
                     std.debug.print("Choice [1-3]: ", .{});
                     
-                    const stdin = std.io.getStdIn().reader();
-                    var buf: [10]u8 = undefined;
-                    const input = (try stdin.readUntilDelimiterOrEof(buf[0..], '\n')) orelse return error.InvalidInput;
+                    var buffer: [1024]u8 = undefined;
+    var file_reader = std.fs.File.stdin().reader(&buffer);
+    const stdin = &file_reader.interface;
+                    const input = stdin.takeDelimiterExclusive('\n') catch return error.InvalidInput;
                     const trimmed = std.mem.trim(u8, input, " \t\n\r");
                     
                     if (std.mem.eql(u8, trimmed, "1")) {
@@ -131,7 +132,7 @@ pub const GitOperations = struct {
     }
     
     fn performPull(self: *GitOperations, repo_path: []const u8, branch: ?[]const u8) !void {
-        var pull_args = std.ArrayList([]const u8).init(self.allocator);
+        var pull_args = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer pull_args.deinit();
         
         try pull_args.append("git");
@@ -168,7 +169,7 @@ pub const GitOperations = struct {
             std.debug.print("Pushing repository: {s}\n", .{repo_path});
         }
         
-        var push_args = std.ArrayList([]const u8).init(self.allocator);
+        var push_args = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer push_args.deinit();
         
         try push_args.append("git");
@@ -206,7 +207,7 @@ pub const GitOperations = struct {
             std.debug.print("Cloning repository: {s} to {s}\n", .{ remote_url, local_path });
         }
         
-        var clone_args = std.ArrayList([]const u8).init(self.allocator);
+        var clone_args = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer clone_args.deinit();
         
         try clone_args.append("git");
@@ -299,7 +300,7 @@ pub const GitOperations = struct {
             std.debug.print("Switching to branch: {s} in {s}\n", .{ branch, repo_path });
         }
         
-        var checkout_args = std.ArrayList([]const u8).init(self.allocator);
+        var checkout_args = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer checkout_args.deinit();
         
         try checkout_args.append("checkout");
@@ -357,7 +358,7 @@ pub const GitOperations = struct {
     }
     
     fn runGitCommandInRepo(self: *GitOperations, repo_path: []const u8, args: []const []const u8) !CommandResult {
-        var full_args = std.ArrayList([]const u8).init(self.allocator);
+        var full_args = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         defer full_args.deinit();
         
         try full_args.append("git");

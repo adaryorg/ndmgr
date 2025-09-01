@@ -15,7 +15,9 @@ pub const GitOperationHandler = struct {
     }
     
     pub fn handleRepoOperation(self: *GitOperationHandler, args: cli.Args, operation: repository_manager.SyncOperation, operation_name: []const u8) !void {
-        const stdout = std.io.getStdOut().writer();
+        var buffer: [1024]u8 = undefined;
+    var file_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &file_writer.interface;
         
         // Load configuration
         const cfg_mgr = try config.ConfigManager.init(self.allocator);

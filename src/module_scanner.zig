@@ -35,15 +35,15 @@ pub const ModuleScanner = struct {
         };
     }
     
-    pub fn scanForModules(self: *ModuleScanner, base_path: []const u8) !std.ArrayList(ModuleInfo) {
-        var modules = std.ArrayList(ModuleInfo).init(self.allocator);
+    pub fn scanForModules(self: *ModuleScanner, base_path: []const u8) !std.array_list.AlignedManaged(ModuleInfo, null) {
+        var modules = std.array_list.AlignedManaged(ModuleInfo, null).init(self.allocator);
         
         try self.scanDirectory(base_path, &modules, 0);
         
         return modules;
     }
     
-    fn scanDirectory(self: *ModuleScanner, dir_path: []const u8, modules: *std.ArrayList(ModuleInfo), depth: u32) !void {
+    fn scanDirectory(self: *ModuleScanner, dir_path: []const u8, modules: *std.array_list.AlignedManaged(ModuleInfo, null), depth: u32) !void {
         if (depth >= self.scan_depth) return;
         
         var dir = fs.cwd().openDir(dir_path, .{ .iterate = true }) catch return;
@@ -197,7 +197,7 @@ pub const ModuleScanner = struct {
     
     pub fn sortModulesByName(self: *ModuleScanner, modules: []ModuleInfo) ![]ModuleInfo {
         // Simple alphabetical sort since we no longer have dependencies
-        var sorted = std.ArrayList(ModuleInfo).init(self.allocator);
+        var sorted = std.array_list.AlignedManaged(ModuleInfo, null).init(self.allocator);
         
         for (modules) |module| {
             try sorted.append(module);

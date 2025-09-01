@@ -12,7 +12,7 @@ pub const StringUtils = struct {
             return try allocator.dupe(u8, template);
         }
         
-        var message = std.ArrayList(u8).init(allocator);
+        var message = std.array_list.AlignedManaged(u8, null).init(allocator);
         defer message.deinit();
         
         var i: usize = 0;

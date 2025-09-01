@@ -74,7 +74,7 @@ pub const RepositoryManager = struct {
     }
     
     pub fn listRepositories(self: *RepositoryManager) []const []const u8 {
-        var names = std.ArrayList([]const u8).init(self.allocator);
+        var names = std.array_list.AlignedManaged([]const u8, null).init(self.allocator);
         var iterator = self.repositories.iterator();
         
         while (iterator.next()) |entry| {
@@ -129,7 +129,7 @@ pub const RepositoryManager = struct {
             };
         }
         
-        var success_msg = std.ArrayList(u8).init(self.allocator);
+        var success_msg = std.array_list.AlignedManaged(u8, null).init(self.allocator);
         var has_error = false;
         
         // Perform sync operations based on the operation type
@@ -212,7 +212,7 @@ pub const RepositoryManager = struct {
     }
     
     pub fn syncAllRepositories(self: *RepositoryManager, operation: SyncOperation, filter: ?[]const u8) ![]SyncResult {
-        var results = std.ArrayList(SyncResult).init(self.allocator);
+        var results = std.array_list.AlignedManaged(SyncResult, null).init(self.allocator);
         var iterator = self.repositories.iterator();
         
         while (iterator.next()) |entry| {

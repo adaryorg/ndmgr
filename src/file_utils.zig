@@ -156,10 +156,10 @@ pub const FileUtils = struct {
                 // Interactive mode: ask user
                 std.debug.print("{s}", .{prompt});
                 
-                var buffer: [10]u8 = undefined;
-                const stdin = std.io.getStdIn().reader();
-                if (stdin.readUntilDelimiterOrEof(buffer[0..], '\n')) |input| {
-                    if (input) |response| {
+                var stdin_buffer: [1024]u8 = undefined;
+    var file_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &file_reader.interface;
+                if (stdin.takeDelimiterExclusive('\n')) |response| {
                         const trimmed = std.mem.trim(u8, response, " \t\r\n");
                         if (std.mem.eql(u8, trimmed, "y") or std.mem.eql(u8, trimmed, "Y") or std.mem.eql(u8, trimmed, "yes")) {
                             return true;
@@ -172,7 +172,6 @@ pub const FileUtils = struct {
                             // Invalid input, use default
                             return default_choice;
                         }
-                    }
                 } else |_| {
                     std.debug.print("Failed to read user input. Using default.\n", .{});
                     return default_choice;
